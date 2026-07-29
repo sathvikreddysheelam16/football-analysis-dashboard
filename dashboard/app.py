@@ -339,7 +339,13 @@ def main():
 
     with st.sidebar:
         st.title("Dashboard Controls")
-        st.markdown("Use expanded sections to choose filters and analytic questions.")
+        st.markdown("Use the sidebar to switch between summary and analytics views.")
+
+        selected_view = st.radio(
+            "Select view",
+            ["Overview dashboard", "Analytics dashboard"],
+            index=0,
+        )
 
         with st.expander("Filter controls", expanded=True):
             with st.expander("Primary Position", expanded=False):
@@ -372,21 +378,25 @@ def main():
                 )
                 sample_size = st.slider("Records to sample", 200, 2000, 1000, step=100)
 
-        with st.expander("Analytics menu", expanded=True):
-            question_options = [
-                "All questions",
-                "1. Rating vs Age by Position",
-                "2. Value vs Wage",
-                "3. League Skill Comparison",
-                "4. Midfield Club Performance",
-                "5. Work Rate Distribution",
-                "6. Nation Skill Profiles",
-                "7. Goalkeeper Skill Profile",
-                "8. Combined Score Leaders",
-                "9. Age / Potential Bubble",
-                "10. Top Rated Players",
-            ]
-            selected_question = st.selectbox("Select a question to focus", question_options, index=0)
+        if selected_view == "Analytics dashboard":
+            with st.expander("Analytics menu", expanded=True):
+                question_options = [
+                    "All questions",
+                    "1. Rating vs Age by Position",
+                    "2. Value vs Wage",
+                    "3. League Skill Comparison",
+                    "4. Midfield Club Performance",
+                    "5. Work Rate Distribution",
+                    "6. Nation Skill Profiles",
+                    "7. Goalkeeper Skill Profile",
+                    "8. Combined Score Leaders",
+                    "9. Age / Potential Bubble",
+                    "10. Top Rated Players",
+                ]
+                selected_question = st.selectbox("Select a question to focus", question_options, index=0)
+        else:
+            selected_question = "Overview dashboard"
+
         st.write("Data rows after filtering will display below.")
 
     filtered = df[
@@ -454,44 +464,31 @@ def main():
             st.plotly_chart(build_top_players_bar(filtered), use_container_width=True)
         else:
             st.markdown("---")
-            st.header("1. How does rating evolve with age across position groups?")
-            st.plotly_chart(build_top_position_line(filtered), use_container_width=True)
+            st.header("Project Overview")
+            st.write("This dashboard is designed to answer 10 multi-dimensional FIFA 22 analytics questions with interactive Plotly visualizations.")
+            st.write("Use the sidebar to filter by position, club, nationality, league level, and age. Choose a specific question to focus the dashboard output.")
+            st.write("The dashboard shows player performance, market value, team comparison, and nation skill profiles.")
 
-            st.markdown("---")
-            st.header("2. What is the market value / wage relationship for high-quality players?")
-            st.plotly_chart(build_value_wage_scatter(filtered), use_container_width=True)
+            st.markdown("### Overview metrics")
+            st.metric("Total players", len(filtered))
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Average overall", f"{filtered['overall'].mean():.1f}")
+            col2.metric("Average potential", f"{filtered['potential'].mean():.1f}")
+            col3.metric("Average value (€M)", f"{filtered['value_m'].mean():.2f}")
 
-            st.markdown("---")
-            st.header("3. How do offensive, playmaking, and defensive skill groups differ by league level?")
-            st.plotly_chart(build_league_skill_profile(filtered), use_container_width=True)
+            st.markdown("### Current filter snapshot")
+            st.write(
+                f"- Selected position: {selected_position}\n"
+                f"- Selected club: {selected_club}\n"
+                f"- Selected nationality: {selected_nation}\n"
+                f"- Selected league levels: {', '.join(selected_league)}\n"
+                f"- Age range: {selected_age[0]} to {selected_age[1]}"
+            )
 
-            st.markdown("---")
-            st.header("4. Which clubs lead in midfield passing and dribbling for top performers?")
-            st.plotly_chart(build_club_midfield_scatter(filtered), use_container_width=True)
-
-            st.markdown("---")
-            st.header("5. How does work rate impact pace and stamina distributions?")
-            st.plotly_chart(build_work_rate_box(filtered), use_container_width=True)
-
-            st.markdown("---")
-            st.header("6. What do the top nations’ skill profiles look like?")
-            st.plotly_chart(build_nation_skill_radar(filtered), use_container_width=True)
-
-            st.markdown("---")
-            st.header("7. How are goalkeeper skill profiles distributed by league level?")
-            st.plotly_chart(build_goalkeeper_profile(filtered), use_container_width=True)
-
-            st.markdown("---")
-            st.header("8. Which players have the strongest combined pace-shooting-passing profile?")
-            st.plotly_chart(build_combined_score_scatter(filtered), use_container_width=True)
-
-            st.markdown("---")
-            st.header("9. Where are the highest-potential players located by age and overall rating?")
-            st.plotly_chart(build_age_potential_bubble(filtered), use_container_width=True)
-
-            st.markdown("---")
-            st.header("10. Who are the top-rated players in the current filter selection?")
-            st.plotly_chart(build_top_players_bar(filtered), use_container_width=True)
+            st.markdown("### Top summary charts")
+            col4, col5 = st.columns(2)
+            col4.plotly_chart(build_top_players_bar(filtered), use_container_width=True)
+            col5.plotly_chart(build_league_skill_profile(filtered), use_container_width=True)
 
     show_question(selected_question)
 
